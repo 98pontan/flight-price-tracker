@@ -1,6 +1,7 @@
 import requests
 import serpapi
 import os
+import logging
 
 
 class FlightSearch:
@@ -22,6 +23,18 @@ class FlightSearch:
             "type": flight_type,
             "month": month,
         })
-        print(results)
+        logging.debug(results)
         # .get("flights"), results.get("start_date"), results.get("end_date")
+        return results
+
+    def get_one_day_flight_data(self, departure, arrival, currency, flight_type, outbound_date):
+        results = self.client.search({
+            "engine": "google_flights",
+            "departure_id": departure,
+            "arrival_id": arrival,
+            "type": flight_type,
+            "currency": currency,
+            "outbound_date": outbound_date,
+        })
+        logging.debug(results)
         return results

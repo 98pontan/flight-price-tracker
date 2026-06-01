@@ -7,3 +7,6 @@ help:
 
 container-build:
 	podman build -t flight-price-tracker:$(version) .
+
+container-run: container-build
+	podman run -d --name flight-price-tracker --replace flight-price-tracker:$(version)

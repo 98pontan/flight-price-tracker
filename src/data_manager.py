@@ -8,5 +8,7 @@ class DataManager:
             "https://api.sheety.co/5f63e3742089a0bad9a304b351ccbbfb/flightTracker/products")
         self.city_data = resp.json()
 
+        self.user_data = requests.get(
+            "https://api.sheety.co/5f63e3742089a0bad9a304b351ccbbfb/flightTracker/users").json()
 
 # https://api.sheety.co/5f63e3742089a0bad9a304b351ccbbfb/flightTracker/products

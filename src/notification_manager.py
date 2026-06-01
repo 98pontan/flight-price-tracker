@@ -8,7 +8,7 @@ from email.mime.multipart import MIMEMultipart
 class NotificationManager:
     # This class is responsible for sending notifications with the deal flight details.
 
-    def send_email(self, subject, body, receiver="pjirbratt@yahoo.com"):
+    def send_email(self, subject, body, receiver):
         email = "pjirbratt@gmail.com"
         password = os.getenv("EMAIL_PASSWORD", "")
         if not password:

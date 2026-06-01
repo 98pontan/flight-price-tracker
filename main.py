@@ -1,5 +1,6 @@
 # This file will need to use the DataManager,FlightSearch, FlightData, NotificationManager classes to achieve the program requirements.
 from calendar import month
+import string
 
 from src.flight_data import FlightData
 from src.data_manager import DataManager
@@ -13,13 +14,6 @@ import time
 import os
 
 load_dotenv()
-
-fake_data = {
-    "City": "Luleå",
-    "IATA": "LLA",
-    "Price": "500",
-    "one_way": True,
-}
 
 month_to_number = {
     "jan": 1,
@@ -41,11 +35,13 @@ default_airport = os.getenv("DEFAULT_AIRPORT", "ARN")
 currency = os.getenv("CURRENCY", "SEK")
 
 
-def run():
-    dm = DataManager()
-    fd = FlightData()
-    fs = FlightSearch()
-    nm = NotificationManager()
+def run_travel_explore(
+        dm=DataManager(),
+        fd=FlightData(),
+        fs=FlightSearch(),
+        nm=NotificationManager(),
+        email=None
+):
 
     logging.debug(f"Available products: {dm.city_data.get('products')}")
 
@@ -58,9 +54,24 @@ def run():
     for city in dm.city_data.get("products"):
         city_code = city.get("iata")
         max_price = city.get("price")
-        months = city.get("months").split(",")
+        months = city.get("months")
+
+        if months is None:
+            logging.warning(
+                f"Missing months for {city.get('city')}, skipping.")
+            continue
+
+        if not city_code:
+            logging.warning(
+                f"Missing IATA code for {city.get('city')}, skipping.")
+            continue
+
+        elif not max_price:
+            logging.warning(f"Missing price for {city.get('city')}, skipping.")
+            continue
+
         months = [month.strip().lower()
-                  for month in months]  # Normalize month names
+                  for month in months.split(",")]
 
         for month in months:
             if month in month_to_number:
@@ -80,7 +91,8 @@ def run():
                 flight_type=flight_type,
                 month=month
             )
-            flights.append(flight_data)
+            if flight_data.get("flights"):
+                flights.append(flight_data)
 
         cheap_destinations, dates = fd.find_cheap_flights(flights, max_price)
 
@@ -91,16 +103,37 @@ def run():
                          f"datum {date} ")
             nm.send_email(
                 subject=f"Billigt flyg hittat till {city.get('city')}!",
-                body=f"Det billigaste flyget till {city.get('city')} kostar {cheapest} SEK och är tillgängligt den {date}."
+                body=f"Det billigaste flyget till {city.get('city')} kostar {cheapest} SEK och är tillgängligt den {date}.",
+                receiver=email
             )
 
         else:
             logging.info("Inga billiga flyg hittades.")
-            sleep_time = 60 * 60 * 24  # Check every 24 hours
-            logging.info(
-                f"Sleeping for {sleep_time} seconds before checking again.")
-            time.sleep(sleep_time)
-            run()
+    sleep_time = 60 * 60 * 24  # Check every 24 hours
+    logging.info(
+        f"Sleeping for {sleep_time} seconds before checking again.")
+    time.sleep(sleep_time)
+
+
+def run():
+    dm = DataManager()
+    fd = FlightData()
+    fs = FlightSearch()
+    nm = NotificationManager()
+
+    users = dm.user_data.get("users", [])
+
+    if not users:
+        logging.warning("No users found.")
+        return
+
+    for user in users:
+        user_email = user.get("enterEMail")
+        if user_email:
+            logging.info(f"Exploring travel options for {user_email}")
+
+            run_travel_explore(dm=dm, fd=fd, fs=fs,
+                               nm=nm, email=user_email)
 
 
 if __name__ == '__main__':
@@ -113,5 +146,4 @@ if __name__ == '__main__':
     )
 
     logging.info("Starting program")
-
     run()

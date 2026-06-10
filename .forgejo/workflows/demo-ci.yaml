@@ -1,0 +1,22 @@
+name: Forgejo Kubernetes Runner Demo
+
+# Trigger this pipeline on every git push command to any branch
+on:
+  push:
+  workflow_dispatch:
+
+
+jobs:
+  test-environment:
+    # IMPORTANT: This must match the labels you specified in your ConfigMap!
+    runs-on: self-hosted
+
+    steps:
+      - name: Check out repository source code
+        uses: actions/checkout@v4
+
+      - name: Print Debug Metadata
+        run: |
+          echo "Hello from your self-hosted Kubernetes runner!"
+          echo "Current Host Architecture:" && uname -m
+          echo "Current Path Contents:" && ls -la

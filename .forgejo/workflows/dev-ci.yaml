@@ -17,12 +17,18 @@ jobs:
           echo "deb https://download.docker.com/linux/debian bookworm stable" > /etc/apt/sources.list.d/docker.list
           apt-get update && apt-get install -y docker-ce-cli docker-buildx-plugin
 
+      - name: Compute registry host (strip protocol scheme)
+        id: registry
+        run: |
+          HOST="${{ github.server_url }}"
+          HOST="${HOST#https://}"
+          HOST="${HOST#http://}"
+          echo "host=$HOST" >> "$GITHUB_OUTPUT"
+
       - name: Log in to Forgejo Container Registry
         uses: https://github.com/docker/login-action@v3
         with:
-          # Using 'github' contexts is explicitly mapped in Forgejo
-          # to maximize compatibility with marketplace actions.
-          registry: ${{ github.server_url }}
+          registry: ${{ steps.registry.outputs.host }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -30,7 +36,7 @@ jobs:
         id: meta
         uses: https://github.com/docker/metadata-action@v5
         with:
-          images: ${{ github.server_url }}/${{ github.repository }}
+          images: ${{ steps.registry.outputs.host }}/${{ github.repository }}
           tags: |
             type=ref,event=branch
             type=sha,format=short

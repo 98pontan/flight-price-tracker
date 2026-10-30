@@ -83,7 +83,18 @@ def run_travel_explore(
         logging.debug(f"Fetching travel options to {city.get('city')}")
 
         flights = []
+        MAX_MONTHS_AHEAD = 6  # current month + 5 forward
+
+        current_month = datetime.datetime.now().month
+
         for month in selected_months:
+            months_ahead = (month - current_month) % 12
+
+            if months_ahead >= MAX_MONTHS_AHEAD:
+                logging.warning(
+                    f"Month {month} is outside the allowed range, skipping.")
+                continue
+
             flight_data = fs.get_flight_data(
                 departure=default_airport,
                 arrival=city_code,

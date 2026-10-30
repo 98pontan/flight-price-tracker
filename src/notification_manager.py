@@ -1,8 +1,11 @@
 import os
 import smtplib
 import logging
+import shlex
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+VAULT_SECRETS_FILE = "/vault/secrets/pyprojects"
 
 
 class NotificationManager:
@@ -10,10 +13,11 @@ class NotificationManager:
 
     def send_email(self, subject, body, receiver):
         email = "pjirbratt@gmail.com"
-        password = os.getenv("EMAIL_PASSWORD", "")
+        password = self.get_secret("EMAIL_PASSWORD")
         if not password:
-            raise ValueError("EMAIL_PASSWORD environment variable is not set.")
-
+            raise ValueError(
+                "EMAIL_PASSWORD is not set in the environment or in /vault/secrets/pyprojects."
+            )
         # Create content of email
         msg = MIMEMultipart()
         msg['Subject'] = subject
@@ -26,3 +30,27 @@ class NotificationManager:
             connection.login(email, password)
             connection.send_message(msg)
         logging.info("Email sent!")
+
+    def get_secret(self, name: str, path: str = VAULT_SECRETS_FILE) -> str:
+        """Return a secret from the environment, falling back to the Vault file."""
+        value = os.getenv(name)
+        if value:
+            return value
+
+        try:
+            with open(path) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    if line.startswith("export "):
+                        line = line[len("export "):]
+                    key, sep, raw = line.partition("=")
+                    if sep and key.strip() == name:
+                        # shlex handles the surrounding quotes
+                        parts = shlex.split(raw)
+                        return parts[0] if parts else ""
+        except FileNotFoundError:
+            pass
+
+        return ""

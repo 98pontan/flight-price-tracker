@@ -1,0 +1,54 @@
+# Flight Price Tracker configuration.
+#
+# Secrets are never stored here. SERPAPI_KEY and EMAIL_PASSWORD are read from the
+# environment, falling back to the Vault-injected file at `secrets_file`.
+#
+# These environment variables override values in this file:
+#   CONFIG_FILE, LISTEN_ADDR, DATABASE_PATH, DEFAULT_AIRPORT, CURRENCY, ONE_WAY,
+#   SEARCH_INTERVAL, SEARCH_PROVIDER, SECRETS_FILE, LOG_LEVEL (debug|info|warn|error)
+
+server:
+  addr: ":8080"
+
+database:
+  path: "flights.db"
+  # Number of search results kept per destination (price history).
+  history_limit: 10
+
+search:
+  # serpapi: real prices (needs SERPAPI_KEY). demo: made-up prices, for trying the app out.
+  provider: serpapi
+  default_airport: "ARN"
+  currency: "SEK"
+  one_way: false
+  # Only months within this many months from now are searched (current month included).
+  max_months_ahead: 6
+  # How often all destinations are searched.
+  interval: 24h
+  run_on_startup: false
+
+notify:
+  # Email when a flight is found below a destination's max_price.
+  enabled: false
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 587
+  from: ""
+  recipients: []
+
+secrets_file: "/vault/secrets/authentication"
+
+# Destinations to add to the database on startup. A destination that already exists
+# in the database is not overwritten, so edits made through the API are kept.
+destinations:
+  - iata: RIX
+    city: Riga
+    max_price: 500
+    months: [jan]
+  - iata: LLA
+    city: Luleå
+    max_price: 1700
+    months: [mar]
+  - iata: WAW
+    city: Warsawa
+    max_price: 500
+    months: [apr]

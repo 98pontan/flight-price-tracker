@@ -1,5 +1,8 @@
-venv/
 .env
 .idea/
-__pycache__/
-*.pyc
+bin/
+*.db
+*.db-shm
+*.db-wal
+go.sum
+go.mod
